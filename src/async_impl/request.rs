@@ -25,6 +25,7 @@ pub struct Request {
     headers: HeaderMap,
     body: Option<Body>,
     timeout: Option<Duration>,
+    read_timeout: Option<Duration>,
     version: Version,
 }
 
@@ -47,6 +48,7 @@ impl Request {
             headers: HeaderMap::new(),
             body: None,
             timeout: None,
+            read_timeout: None,
             version: Version::default(),
         }
     }
@@ -111,6 +113,18 @@ impl Request {
         &mut self.timeout
     }
 
+    /// Get the read timeout.
+    #[inline]
+    pub fn read_timeout(&self) -> Option<&Duration> {
+        self.read_timeout.as_ref()
+    }
+
+    /// Get a mutable reference to the read timeout.
+    #[inline]
+    pub fn read_timeout_mut(&mut self) -> &mut Option<Duration> {
+        &mut self.read_timeout
+    }
+
     /// Get the http version.
     #[inline]
     pub fn version(&self) -> Version {
@@ -133,6 +147,7 @@ impl Request {
         };
         let mut req = Request::new(self.method().clone(), self.url().clone());
         *req.timeout_mut() = self.timeout().copied();
+        *req.read_timeout_mut() = self.read_timeout().copied();
         *req.headers_mut() = self.headers().clone();
         *req.version_mut() = self.version();
         req.body = body;
@@ -147,6 +162,7 @@ impl Request {
         HeaderMap,
         Option<Body>,
         Option<Duration>,
+        Option<Duration>,
         Version,
     ) {
         (
@@ -155,6 +171,7 @@ impl Request {
             self.headers,
             self.body,
             self.timeout,
+            self.read_timeout,
             self.version,
         )
     }
@@ -286,6 +303,18 @@ impl RequestBuilder {
     pub fn timeout(mut self, timeout: Duration) -> RequestBuilder {
         if let Ok(ref mut req) = self.request {
             *req.timeout_mut() = Some(timeout);
+        }
+        self
+    }
+
+    /// Enables a request read timeout.
+    ///
+    /// The timeout is applied from when the response body starts being read until
+    /// the response body has finished. It affects only this request and overrides
+    /// the timeout configured using `ClientBuilder::read_timeout()`.
+    pub fn read_timeout(mut self, timeout: Duration) -> RequestBuilder {
+        if let Ok(ref mut req) = self.request {
+            *req.read_timeout_mut() = Some(timeout);
         }
         self
     }
@@ -621,6 +650,7 @@ where
             headers,
             body: Some(body.into()),
             timeout: None,
+            read_timeout: None,
             version,
         })
     }

@@ -2116,7 +2116,7 @@ impl Client {
     }
 
     pub(super) fn execute_request(&self, req: Request) -> Pending {
-        let (method, url, mut headers, body, timeout, version) = req.pieces();
+        let (method, url, mut headers, body, timeout, read_timeout, version) = req.pieces();
         if url.scheme() != "http" && url.scheme() != "https" {
             return Pending::new_err(error::url_bad_scheme(url));
         }
@@ -2191,11 +2191,9 @@ impl Client {
             .map(tokio::time::sleep)
             .map(Box::pin);
 
-        let read_timeout_fut = self
-            .inner
-            .read_timeout
-            .map(tokio::time::sleep)
-            .map(Box::pin);
+        let read_timeout = read_timeout.or(self.inner.read_timeout);
+
+        let read_timeout_fut = read_timeout.map(tokio::time::sleep).map(Box::pin);
 
         Pending {
             inner: PendingInner::Request(PendingRequest {
@@ -2213,7 +2211,7 @@ impl Client {
                 in_flight,
                 total_timeout,
                 read_timeout_fut,
-                read_timeout: self.inner.read_timeout,
+                read_timeout,
             }),
         }
     }

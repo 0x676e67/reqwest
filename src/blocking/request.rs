@@ -113,6 +113,18 @@ impl Request {
         self.inner.timeout_mut()
     }
 
+    /// Get the read timeout.
+    #[inline]
+    pub fn read_timeout(&self) -> Option<&Duration> {
+        self.inner.read_timeout()
+    }
+
+    /// Get a mutable reference to the read timeout.
+    #[inline]
+    pub fn read_timeout_mut(&mut self) -> &mut Option<Duration> {
+        self.inner.read_timeout_mut()
+    }
+
     /// Attempts to clone the `Request`.
     ///
     /// None is returned if a body is which can not be cloned. This can be because the body is a
@@ -359,6 +371,18 @@ impl RequestBuilder {
     pub fn timeout(mut self, timeout: Duration) -> RequestBuilder {
         if let Ok(ref mut req) = self.request {
             *req.timeout_mut() = Some(timeout);
+        }
+        self
+    }
+
+    /// Enables a request read timeout.
+    ///
+    /// The read timeout is applied from when the request starts connecting until the
+    /// response body has finished. It affects only this request and overrides
+    /// the timeout configured using `ClientBuilder::timeout()`.
+    pub fn read_timeout(mut self, timeout: Duration) -> RequestBuilder {
+        if let Ok(ref mut req) = self.request {
+            *req.read_timeout_mut() = Some(timeout);
         }
         self
     }
